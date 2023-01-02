@@ -2,6 +2,7 @@ import React from "react";
 import { useState } from "react";
 import { useEffect } from "react";
 import { deletePost, getPosts } from "../api/post";
+import { useNotification } from "../context/NotificationProvider";
 import { useSearch } from "../context/SearchProvider";
 import PostCard from "./PostCard";
 
@@ -20,13 +21,15 @@ export default function Home() {
   const [posts, setPosts] = useState([]);
   const [totalPostCount, setTotalPostCount] = useState([]);
 
+  const { updateNotification } = useNotification();
+
   const paginationCount = getPaginationCount(totalPostCount);
   const paginationArray = new Array(paginationCount).fill(" ");
 
   const fetchPosts = async () => {
     const { error, posts, postCount } = await getPosts(pageNo, POST_LIMIT);
 
-    if (error) return console.log(error);
+    if (error) return updateNotification("error", error);
 
     setPosts(posts);
     setTotalPostCount(postCount);
@@ -34,6 +37,8 @@ export default function Home() {
 
   useEffect(() => {
     fetchPosts();
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchMorePosts = (index) => {
@@ -46,8 +51,8 @@ export default function Home() {
     if (!confirmed) return;
     const { error, message } = await deletePost(id);
 
-    if (error) return console.log(error);
-    console.log(message);
+    if (error) return updateNotification("error", error);
+    updateNotification("success", message);
 
     const newPosts = posts.filter((p) => p.id !== id);
     setPosts(newPosts);
@@ -80,7 +85,7 @@ export default function Home() {
           {paginationArray.map((_, index) => {
             return (
               <button
-              key={index}
+                key={index}
                 onClick={() => fetchMorePosts(index)}
                 className={
                   index === pageNo
